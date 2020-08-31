@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
+cd ~/work/tomcat/bin
+chmod +x ~/work/tomcat/bin/catalina.sh
+bash -c "~/work/tomcat/bin/catalina.sh run"
+# TODO: Do not run Tomcat in background to show catalina.out or TestExplorer.log
