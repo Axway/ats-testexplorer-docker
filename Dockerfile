@@ -1,5 +1,5 @@
 FROM ubuntu:18.04
-# use direct Tomcat container
+# Todo: Use direct Tomcat container
 
 ARG username=atsuser
 ARG password=atspassword
