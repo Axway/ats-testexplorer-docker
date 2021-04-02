@@ -23,6 +23,7 @@ if [ -s "testexplorer-maven-metadata.xml" ];
 then
   TESTEXPLORER_METADATA=`cat testexplorer-maven-metadata.xml | grep 'value' | uniq | xargs | awk '{n=split($0,a,">"); print a[n-1]}' | awk '{n=split($0,a,"<"); print a[1]}'`
   rm testexplorer-maven-metadata.xml
+  echo "Parsed latest snapshot version: $TESTEXPLORER_METADATA"
 fi
 
 ### HTTP Db Logger section - optional
