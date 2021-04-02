@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 
 ATS_USER_HOME=/home/atsuser
-TESTEXPLORER_VERSION="4.0.7-SNAPSHOT"
-HTTPDBLOGGER_VERSION="4.0.7-SNAPSHOT"
+mkdir -p $ATS_USER_HOME/work
+cd $ATS_USER_HOME/work
 
-TOMCAT_DOWNLOAD_LOCATION="http://archive.apache.org/dist/tomcat/tomcat-8/v8.5.45/bin/apache-tomcat-8.5.45.zip"
+TESTEXPLORER_VERSION="4.0.8-SNAPSHOT"
+HTTPDBLOGGER_VERSION="4.0.8" # -SNAPSHOT"
+# unzip options - quiet, do not list each extracted file
+UNZIP=-q; export UNZIP
+
+TOMCAT_DOWNLOAD_LOCATION="http://archive.apache.org/dist/tomcat/tomcat-8/v8.5.64/bin/apache-tomcat-8.5.64.zip"
 TOMCAT_ZIP_NAME=`echo $TOMCAT_DOWNLOAD_LOCATION | awk '{len=split($0,a,"/"); print a[len]}'`
 TOMCAT_NAME=`echo $TOMCAT_ZIP_NAME | awk '{len=split($0,a,".zip"); print a[len-1]}'`
 TOMCAT_HOME=$ATS_USER_HOME/work/tomcat
@@ -20,22 +25,19 @@ then
   rm testexplorer-maven-metadata.xml
 fi
 
-HTTPDBLOGGER_HOME=$ATS_USER_HOME/work/httpdblogger
-HTTPDBLOGGER_DOWNLOAD_LOCATION="https://oss.sonatype.org/content/groups/public/com/axway/ats/httpdblogger/ats-httpdblogger/$HTTPDBLOGGER_VERSION"
-HTTPDBLOGGER_METADATA=$HTTPDBLOGGER_VERSION
+### HTTP Db Logger section - optional
+#HTTPDBLOGGER_HOME=$ATS_USER_HOME/work/httpdblogger
+#HTTPDBLOGGER_DOWNLOAD_LOCATION="https://oss.sonatype.org/content/groups/public/com/axway/ats/httpdblogger/ats-httpdblogger/$HTTPDBLOGGER_VERSION"
+#HTTPDBLOGGER_METADATA=$HTTPDBLOGGER_VERSION
+#
+#wget -O httpdblogger-maven-metadata.xml $HTTPDBLOGGER_DOWNLOAD_LOCATION/maven-metadata.xml
+#if [ -s "httpdblogger-maven-metadata.xml" ]; # file exists and its size is > 0
+#then
+#    HTTPDBLOGGER_METADATA=`cat httpdblogger-maven-metadata.xml | grep 'value' | uniq | xargs | awk '{n=split($0,a,">"); print a[n-1]}' | awk '{n=split($0,a,"<"); print a[1]}'`
+#    rm httpdblogger-maven-metadata.xml
+#fi
 
-wget -O httpdblogger-maven-metadata.xml $HTTPDBLOGGER_DOWNLOAD_LOCATION/maven-metadata.xml
-if [ -s "httpdblogger-maven-metadata.xml" ]; # file exists and its size is > 0
-then
-    HTTPDBLOGGER_METADATA=`cat httpdblogger-maven-metadata.xml | grep 'value' | uniq | xargs | awk '{n=split($0,a,">"); print a[n-1]}' | awk '{n=split($0,a,"<"); print a[1]}'`
-    rm httpdblogger-maven-metadata.xml
-fi
-
-PSQL_USER=postgres
-PSQL_PASSWORD=postgres
-ATS_LOG_DB=AtsTestDb
-
-# download tomcat
+# download Tomcat
 if [ ! -d "$TOMCAT_HOME" ];
 then
     mkdir $TOMCAT_HOME
@@ -46,7 +48,8 @@ wget $TOMCAT_DOWNLOAD_LOCATION
 unzip $TOMCAT_ZIP_NAME
 rm $TOMCAT_ZIP_NAME
 mv $TOMCAT_NAME/* .
-rm -rf $TOMCAT_NAME
+rm -r $TOMCAT_HOME/webapps/examples/ $TOMCAT_HOME/webapps/docs/
+chmod ug+x $TOMCAT_HOME/bin/catalina.sh
 
 # config tomcat
 rm -rf $TOMCAT_HOME/webapps/ROOT/*
@@ -62,42 +65,44 @@ cat <<EOF > $TOMCAT_HOME/webapps/ROOT/index.html
 EOF
 
 
-# download testexplorer
+# download TestExplorer
 if [ ! -d "$TESTEXPLORER_HOME" ];
 then
-	mkdir $TESTEXPLORER_HOME
+    mkdir -p $TESTEXPLORER_HOME
 fi
 cd $TESTEXPLORER_HOME
-
 wget "$TESTEXPLORER_DOWNLOAD_LOCATION/ats-testexplorer-$TESTEXPLORER_METADATA.zip"
 unzip ats-testexplorer-$TESTEXPLORER_METADATA.zip
 rm ats-testexplorer-$TESTEXPLORER_METADATA.zip
+# deploy TestExplorer - unpacked in webapps for easy runtime/on-start reconfiguration
+unzip *.war -d $TOMCAT_HOME/webapps/TestExplorer/
 
-# config testexplorer
-mkdir tmp
-cd tmp
-cp ../ats-testexplorer-$TESTEXPLORER_VERSION.war .
-unzip ats-testexplorer-$TESTEXPLORER_VERSION.war
-sed -i 's/'db.port=1433'/'db.port=5432'/g' WEB-INF/classes/ats.config.properties
-rm ats-testexplorer-$TESTEXPLORER_VERSION.war
-zip -r ats-testexplorer-$TESTEXPLORER_VERSION.war ./*
-mv ats-testexplorer-$TESTEXPLORER_VERSION.war ../
-cd ../
-rm -rf ./tmp
-
-# deploy testexplorer
-mv *.war $TOMCAT_HOME/webapps/TestExplorer.war
+# TestExplorer - old WAR re-pack version
+#mkdir tmp
+#cd tmp
+#cp ../ats-testexplorer-$TESTEXPLORER_VERSION.war .
+#unzip ats-testexplorer-$TESTEXPLORER_VERSION.war
+#sed -i 's/'db.port=1433'/'db.port=5432'/g' WEB-INF/classes/ats.config.properties
+#rm ats-testexplorer-$TESTEXPLORER_VERSION.war
+#zip -r ats-testexplorer-$TESTEXPLORER_VERSION.war ./*
+#mv ats-testexplorer-$TESTEXPLORER_VERSION.war ../
+#cd ../
+#rm -rf ./tmp
+# deploy testexplorer WAR
+#mv *.war $TOMCAT_HOME/webapps/TestExplorer.war
 
 cd $ATS_USER_HOME/work
-# download http db logger
-if [ ! -d "$HTTPDBLOGGER_HOME" ];
-then
-    mkdir $HTTPDBLOGGER_HOME
-fi
-cd $HTTPDBLOGGER_HOME
-wget "$HTTPDBLOGGER_DOWNLOAD_LOCATION/ats-httpdblogger-$HTTPDBLOGGER_METADATA.war"
-# deploy http db logger
-mv *.war $TOMCAT_HOME/webapps/HttpDbLogger.war
+
+# TODO - HttpDbLogger deployment
+## download http db logger
+#if [ ! -d "$HTTPDBLOGGER_HOME" ];
+#then
+#    mkdir $HTTPDBLOGGER_HOME
+#fi
+#cd $HTTPDBLOGGER_HOME
+#wget "$HTTPDBLOGGER_DOWNLOAD_LOCATION/ats-httpdblogger-$HTTPDBLOGGER_METADATA.war"
+## deploy http db logger
+#mv *.war $TOMCAT_HOME/webapps/HttpDbLogger.war
 
 # do not ask for password, when user 'atsuser' executes sudo
 echo "atsuser ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/dont-prompt-atsuser-for-password

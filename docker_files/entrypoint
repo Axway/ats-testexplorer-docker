@@ -1,8 +1,187 @@
 #!/usr/bin/env bash
 
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+# Trace version
+set -x
 
-cd ~/work/tomcat/bin
-chmod +x ~/work/tomcat/bin/catalina.sh
-bash -c "~/work/tomcat/bin/catalina.sh run"
-# TODO: Do not run Tomcat in background to show catalina.out or TestExplorer.log
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+ATS_USER_HOME=/home/atsuser
+# TESTEXPLORER_VERSION="4.0.8"
+TESTEXPLORER_HOME=$ATS_USER_HOME/work/testexplorer
+TOMCAT_HOME=$ATS_USER_HOME/work/tomcat
+
+echo "Current dir `pwd`"
+
+function print_help() {
+  echo "Container environment settings related to configuration of the TestExplorer Database to be installed/used:
+  - DB_TYPE - DB to be used, no default; Supported DB type: PGSQL or MSSQL.
+  - DB_HOST - DB server host, no default;
+  - DB_HOST - DB server port, default: 5432 or 1433 depending on DB_TYPE;
+  - DB_HOST - database name for TestExplorer; no default;
+  - DBA_USER - DB admin name, default: use current OS account;
+  - DBA_PASS - DB admin password;
+  - DB_TE_USER - TestExplorer DB user, default is: AtsUser;
+  - DB_TE_USER - TestExplorer DB password;"
+}
+
+function check_db_existence () {
+  # parameter - database to check for existence on DB_HOST:DB_PORT
+  # return codes - 0 - does not exist; 1 - already exists; 6 - connection or login error;
+  local PGDATABASE="$1"
+  # see if database exists
+  PGPASSWORD="$DBA_PASS" DBS_OUTPUT=$(psql -h $DB_HOST -p $DB_PORT -U $DBA_USER -l)
+  if [ $? != 0 ]; then
+      echo "List of installed databases could not be retrieved. Possible cause is wrong host or port parameter, DB admin user or password"
+      echo "Provided connection parameters: DB_HOST: $DB_HOST, DB_PORT: $DB_PORT, DBA user: $DBA_USER and password via  env var. DBA_PASS"
+      return 6
+  fi
+  DATABASE_EXISTS=$(echo "$DBS_OUTPUT" | grep -c --regexp="^ $PGDATABASE ")
+
+  if [ "$DATABASE_EXISTS" != 0 ]; then
+    echo "Database named $PGDATABASE already exists."
+    return 1
+  else
+    echo "Database named $PGDATABASE does not exist."
+    return 0;
+  fi
+  #return "$DATABASE_EXISTS"
+}
+
+
+if [ -z "$DB_TYPE" ]; then
+  echo "Required environment variable DB_TYPE is not defined. Values: PGSQL or MSSQL"
+  print_help
+  exit 1
+else
+  if [ "$DB_TYPE" == "PGSQL" ] ; then
+    echo "PGSQL DB type specified"
+  else
+    if [ "$DB_TYPE" == "MSSQL" ] ; then
+        echo "MSSQL DB type specified"
+    else
+        echo "Unknown value provided for DB_TYPE: $DB_TYPE. Possible values are PGSQL or MSSQL";
+        exit 1
+    fi
+  fi
+fi
+
+if [ -z "$DB_STATE" ]; then
+  echo "Environment variable DB_STATE is not defined. Assuming action: reuse"
+  DB_STATE="reuse"
+else
+  echo "Environment variable DB_STATE is defined with the value: $DB_STATE"
+fi
+
+if [ -z "$DB_HOST" ]; then
+  echo "Required environment variable DB_HOST is not defined."
+  print_help
+  exit 2
+else
+  echo "DB_HOST environment variable is defined with the value: $DB_HOST"
+fi
+
+if [ -z "$DB_PORT" ]; then
+  DB_PORT=5432;
+  if [ "$DB_TYPE" == "MSSQL" ]; then
+    DB_PORT=1433
+  fi
+  echo "Environment variable DB_PORT is not defined. Using default: $DB_PORT"
+else
+  echo "DB_PORT environment variable is defined with the value: $DB_PORT"
+fi
+
+if [ -z "$DB_NAME" ]; then
+  echo "Required environment variable DB_NAME (ATS DB to install/upgrade and use later) is not defined."
+  print_help
+  exit 3
+else
+  echo "DB_NAME environment variable is defined with the value: $DB_NAME"
+fi
+
+if [ -z "$DBA_USER" ]; then
+  if [ "$DB_TYPE" == "MSSQL" ]; then
+    DBA_USER="sa"
+  else
+    DBA_USER="postgres"
+  fi
+  echo "DBA_USER environment variable is not defined. Using default: $DBA_USER"
+else
+  echo "DBA_USER environment variable is defined with the value: $DBA_USER"
+fi
+
+if ! [ -z "$PGPASSWORD" ]; then
+  echo "Using provided PGPASSWORD environment variable"
+  DBA_PASS=$PGPASSWORD
+else
+    if [ -z "$DBA_PASS" ]; then
+        echo "DBA_PASS is not specified"
+        print_help
+        exit 4
+    else
+        echo "DBA_PASS env. variable is provided"
+    fi
+fi
+export PGPASSWORD=$DBA_PASS
+
+if [ -z "$DB_TE_USER" ]; then
+  DB_TE_USER="AtsUser"
+else
+  echo "DB_TE_USER environment variable is defined with the value: $DB_TE_USER"
+fi
+
+if [ -z "$DB_TE_PASS" ]; then
+  DB_TE_PASS="AtsPassword"
+else
+  echo "DB_TE_PASS environment variable is defined and will be used"
+fi
+
+cd $TESTEXPLORER_HOME/db/
+
+if [[ "$DB_TYPE" == "PGSQL" ]]; then
+    echo "PostgreSQL server case specified"
+    cd postgresql/
+    check_db_existence "$DB_NAME"
+    DATABASE_EXISTS=$?
+
+    # install, upgrade or use existing?
+    if [[ "$DB_STATE" == "install" ]];
+    then
+        if [[ "$DATABASE_EXISTS" == "1" ]] ; then
+            echo "DB named $DB_NAME already exists on target DB server. Trying to reuse this DB."
+        else
+          echo "Starting TestExplorer DB install"
+          echo "Current directory $(pwd)"
+          ./install_postgresql.sh -H $DB_HOST -p $DB_PORT -d $DB_NAME -U $DBA_USER -S $DBA_PASS -u $DB_TE_USER -s $DB_TE_PASS
+          INSTALL_STATUS=$?
+          if [[ "$INSTALL_STATUS" != "0" ]] ; then
+            echo "DB installation failed with exit code $INSTALL_STATUS. Exiting"
+            exit 12;
+          fi
+        fi
+    fi
+    if [[ $DB_STATE == "upgrade" ]] ; then
+        echo "Starting TestExplorer DB  upgrade"
+        ./upgrade_postgresql.sh -H $DB_HOST -p $DB_PORT -d $DB_NAME -U $DBA_USER -S $DBA_PASS -u $DB_TE_USER -s $DB_TE_PASS
+        # CHECK EXIT code
+        # UPGRADE_STATUS=$?
+    fi
+    if [[ $DB_STATE == "reuse" ]] ; then
+        # nothing - just use DB data for Tomcat
+        echo "Re-using DB $DB_NAME running on $DB_HOST:$DB_PORT"
+    fi
+else
+    # MSSQL
+    echo "SQL Server case"
+fi
+
+# TestExplorer configuration - unpacked WAR
+# webapps/TestExplorer is unpacked/created during image creation
+cd "$TOMCAT_HOME/webapps/TestExplorer"
+sed -i 's/'db.host=127.0.0.1'/'db.host=$DB_HOST'/g' WEB-INF/classes/ats.config.properties
+sed -i 's/'db.port=1433'/'db.port=$DB_PORT'/g' WEB-INF/classes/ats.config.properties
+sed -i 's/'db.user=AtsUser'/'db.user=$DB_TE_USER'/g' WEB-INF/classes/ats.config.properties
+sed -i 's/'db.password=AtsPassword'/'db.password=$DB_TE_PASS'/g' WEB-INF/classes/ats.config.properties
+# Optionally repack war
+
+cd $TOMCAT_HOME
+# chmod +x $TOMCAT_HOME/bin/catalina.sh - flag set in config
+bash -c "$TOMCAT_HOME/bin/catalina.sh run"
