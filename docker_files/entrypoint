@@ -177,7 +177,7 @@ fi
 # webapps/TestExplorer is unpacked/created during image creation
 cd "$TOMCAT_HOME/webapps/TestExplorer"
 
-if [[ -s WEB-INF/classes/ats.config.properties ]];
+if [[ -s WEB-INF/classes/databases.txt ]];
 then
     echo "Non-empty databases.txt file. Reusing DB configuration"
 else
