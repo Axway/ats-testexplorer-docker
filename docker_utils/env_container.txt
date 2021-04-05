@@ -1,0 +1,13 @@
+# note that you could not put backslash \ to split lines, nor to refer other variables
+
+DB_TYPE=PGSQL
+DB_STATE=install
+DB_HOST=localhost
+# non-default port. Default is 5432
+DB_PORT=5433
+DB_NAME=AtsDemoDB
+
+DBA_USER=<some_admin_like_postgres>
+DBA_PASS=<db_admin_pwd>
+DB_TE_USER=AtsUser
+DB_TE_PASS=<AtsPassword>

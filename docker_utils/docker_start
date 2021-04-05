@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Run container in background
+. ./env.sh
+
+docker run -td -p 8080:8080 \
+   --env-file ./$ENV_CONT_FILE_NAME \
+   $IMAGE_NAME
