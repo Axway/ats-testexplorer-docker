@@ -176,10 +176,17 @@ fi
 # TestExplorer configuration - unpacked WAR
 # webapps/TestExplorer is unpacked/created during image creation
 cd "$TOMCAT_HOME/webapps/TestExplorer"
-sed -i 's/'db.host=127.0.0.1'/'db.host=$DB_HOST'/g' WEB-INF/classes/ats.config.properties
-sed -i 's/'db.port=1433'/'db.port=$DB_PORT'/g' WEB-INF/classes/ats.config.properties
-sed -i 's/'db.user=AtsUser'/'db.user=$DB_TE_USER'/g' WEB-INF/classes/ats.config.properties
-sed -i 's/'db.password=AtsPassword'/'db.password=$DB_TE_PASS'/g' WEB-INF/classes/ats.config.properties
+
+if [[ -s WEB-INF/classes/ats.config.properties ]];
+then
+    echo "Non-empty databases.txt file. Reusing DB configuration"
+else
+    sed -i 's/'db.host=127.0.0.1'/'db.host=$DB_HOST'/g' WEB-INF/classes/ats.config.properties
+    sed -i 's/'db.port=1433'/'db.port=$DB_PORT'/g' WEB-INF/classes/ats.config.properties
+    sed -i 's/'db.user=AtsUser'/'db.user=$DB_TE_USER'/g' WEB-INF/classes/ats.config.properties
+    sed -i 's/'db.password=AtsPassword'/'db.password=$DB_TE_PASS'/g' WEB-INF/classes/ats.config.properties
+    echo "$DB_NAME\n" >> WEB-INF/classes/databases.txt
+fi
 # Optionally repack war
 
 cd $TOMCAT_HOME
