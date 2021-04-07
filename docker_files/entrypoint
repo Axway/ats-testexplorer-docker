@@ -22,8 +22,8 @@ function print_help() {
   - DB_TE_USER - TestExplorer DB user, default is: AtsUser;
   - DB_TE_USER - TestExplorer DB password;"
 }
-
-function check_db_existence () {
+# Check for existing DB for PostgreSQL
+function check_db_existence_pg () {
   # parameter - database to check for existence on DB_HOST:DB_PORT
   # return codes - 0 - does not exist; 1 - already exists; 6 - connection or login error;
   local PGDATABASE="$1"
@@ -44,6 +44,23 @@ function check_db_existence () {
     return 0;
   fi
   #return "$DATABASE_EXISTS"
+}
+
+# Check for existing DB for SQL Server
+function check_db_existence_ms() {
+  # return number of existing DBs with provided name;
+  # $MSSQL_DATABASE is read as first argument
+  MSSQL_DATABASE="$1"
+
+  DBS_OUTPUT=$($SQLCMD_LOCATION -S $DB_HOST,$DB_PORT -U $DBA_USER -P $DBA_PASS -Q "EXEC sp_databases")
+
+  if [ $? != 0 ]; then
+    echo "List of installed databases could not be retrieved. Possible cause is wrong host or port parameter, DB admin user or password"
+    echo "Use option \"-h\" for help"
+    exit 6
+  fi
+  DATABASE_EXISTS=$(echo "$DBS_OUTPUT" | grep -c --regexp="^$MSSQL_DATABASE ")
+  return "$DATABASE_EXISTS"
 }
 
 
@@ -139,7 +156,7 @@ cd $TESTEXPLORER_HOME/db/
 if [[ "$DB_TYPE" == "PGSQL" ]]; then
     echo "PostgreSQL server case specified"
     cd postgresql/
-    check_db_existence "$DB_NAME"
+    check_db_existence_pg "$DB_NAME"
     DATABASE_EXISTS=$?
 
     # install, upgrade or use existing?
@@ -159,10 +176,13 @@ if [[ "$DB_TYPE" == "PGSQL" ]]; then
         fi
     fi
     if [[ $DB_STATE == "upgrade" ]] ; then
-        echo "Starting TestExplorer DB  upgrade"
+        echo "Starting TestExplorer DB upgrade"
         ./upgrade_postgresql.sh -H $DB_HOST -p $DB_PORT -d $DB_NAME -U $DBA_USER -S $DBA_PASS -u $DB_TE_USER -s $DB_TE_PASS
-        # CHECK EXIT code
-        # UPGRADE_STATUS=$?
+        UPGRADE_STATUS=$?
+        if [ "$UPGRADE_STATUS" != 0 ]; then
+            # Exit w/o running Tomcat
+            exit $UPGRADE_STATUS
+        fi
     fi
     if [[ $DB_STATE == "reuse" ]] ; then
         # nothing - just use DB data for Tomcat
@@ -171,6 +191,41 @@ if [[ "$DB_TYPE" == "PGSQL" ]]; then
 else
     # MSSQL
     echo "SQL Server case"
+    echo "PostgreSQL server case specified"
+    cd mssql/
+    check_db_existence_ms "$DB_NAME"
+    DATABASE_EXISTS=$?
+
+    # install, upgrade or use existing
+    if [[ "$DB_STATE" == "install" ]];
+    then
+        if [[ "$DATABASE_EXISTS" == "1" ]] ; then
+            echo "DB named $DB_NAME already exists on target DB server. Trying to reuse this DB."
+        else
+          echo "Starting TestExplorer DB install"
+          echo "Current directory $(pwd)"
+          ./install.sh -H $DB_HOST -p $DB_PORT -d $DB_NAME -U $DBA_USER -S $DBA_PASS -u $DB_TE_USER -s $DB_TE_PASS
+          INSTALL_STATUS=$?
+          if [[ "$INSTALL_STATUS" != "0" ]] ; then
+            echo "DB installation failed with exit code $INSTALL_STATUS. Exiting"
+            exit 12;
+          fi
+        fi
+    fi
+    if [[ $DB_STATE == "upgrade" ]] ; then
+        echo "Starting TestExplorer DB upgrade"
+        ./upgrade.sh -H $DB_HOST -p $DB_PORT -d $DB_NAME -U $DBA_USER -S $DBA_PASS -u $DB_TE_USER -s $DB_TE_PASS
+        UPGRADE_STATUS=$?
+        echo "Upgrade passed with exit code $UPGRADE_STATUS"
+        if [ "$UPGRADE_STATUS" != 0 ]; then
+            # Exit w/o running Tomcat
+            exit $UPGRADE_STATUS
+        fi
+    fi
+    if [[ $DB_STATE == "reuse" ]] ; then
+        # nothing - just use DB data for Tomcat
+        echo "Re-using DB $DB_NAME running on $DB_HOST:$DB_PORT"
+    fi
 fi
 
 # TestExplorer configuration - unpacked WAR
