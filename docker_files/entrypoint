@@ -189,9 +189,7 @@ if [[ "$DB_TYPE" == "PGSQL" ]]; then
         echo "Re-using DB $DB_NAME running on $DB_HOST:$DB_PORT"
     fi
 else
-    # MSSQL
     echo "SQL Server case"
-    echo "PostgreSQL server case specified"
     cd mssql/
     check_db_existence_ms "$DB_NAME"
     DATABASE_EXISTS=$?
