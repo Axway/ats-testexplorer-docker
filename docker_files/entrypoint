@@ -191,6 +191,15 @@ if [[ "$DB_TYPE" == "PGSQL" ]]; then
 else
     echo "SQL Server case"
     cd mssql/
+    SQLCMD_LOCATION=""
+    if [ -n "$(command -v sqlcmd)" ]; then
+      SQLCMD_LOCATION="$(command -v sqlcmd)"
+    elif [ -n "$(command -v /opt/mssql-tools/bin/sqlcmd)" ]; then
+      SQLCMD_LOCATION="$(command -v /opt/mssql-tools/bin/sqlcmd)"
+    else
+      echo "Location of command sqlcmd could not be found"
+      exit 11
+    fi
     check_db_existence_ms "$DB_NAME"
     DATABASE_EXISTS=$?
 
