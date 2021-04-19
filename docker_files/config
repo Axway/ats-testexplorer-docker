@@ -94,16 +94,16 @@ unzip *.war -d $TOMCAT_HOME/webapps/TestExplorer/
 
 cd $ATS_USER_HOME/work
 
-# TODO - HttpDbLogger deployment
-# download http db logger
-if [ ! -d "$HTTPDBLOGGER_HOME" ];
-then
-    mkdir $HTTPDBLOGGER_HOME
-fi
-cd $HTTPDBLOGGER_HOME
-wget "$HTTPDBLOGGER_DOWNLOAD_LOCATION/ats-httpdblogger-$HTTPDBLOGGER_METADATA.war"
-# deploy http db logger
-mv *.war $TOMCAT_HOME/webapps/HttpDbLogger.war
+# Optional - HttpDbLogger deployment
+## download http db logger
+#if [ ! -d "$HTTPDBLOGGER_HOME" ];
+#then
+#    mkdir $HTTPDBLOGGER_HOME
+#fi
+#cd $HTTPDBLOGGER_HOME
+#wget "$HTTPDBLOGGER_DOWNLOAD_LOCATION/ats-httpdblogger-$HTTPDBLOGGER_METADATA.war"
+## deploy http db logger
+#mv *.war $TOMCAT_HOME/webapps/HttpDbLogger.war
 
 # do not ask for password, when user 'atsuser' executes sudo
 echo "atsuser ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/dont-prompt-atsuser-for-password
