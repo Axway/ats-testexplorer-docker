@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Trace version
-set -x
+# set -x
 
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 ATS_USER_HOME=/home/atsuser
