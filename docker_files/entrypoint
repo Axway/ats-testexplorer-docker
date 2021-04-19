@@ -13,10 +13,11 @@ echo "Current dir `pwd`"
 
 function print_help() {
   echo "Container environment settings related to configuration of the TestExplorer Database to be installed/used:
+  - DB_STATE - action for the remote DB: install, upgrade or reuse (default).
   - DB_TYPE - DB to be used, no default; Supported DB type: PGSQL or MSSQL.
   - DB_HOST - DB server host, no default;
-  - DB_HOST - DB server port, default: 5432 or 1433 depending on DB_TYPE;
-  - DB_HOST - database name for TestExplorer; no default;
+  - DB_PORT - DB server port, default: 5432 or 1433 depending on DB_TYPE;
+  - DB_NAME - database name for TestExplorer; no default;
   - DBA_USER - DB admin name, default: use current OS account;
   - DBA_PASS - DB admin password;
   - DB_TE_USER - TestExplorer DB user, default is: AtsUser;
