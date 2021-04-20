@@ -4,8 +4,8 @@ ATS_USER_HOME=/home/atsuser
 mkdir -p $ATS_USER_HOME/work
 cd $ATS_USER_HOME/work
 
-TESTEXPLORER_VERSION="4.0.8"
-HTTPDBLOGGER_VERSION="4.0.8" # -SNAPSHOT"
+TESTEXPLORER_VERSION="4.0.9-SNAPSHOT"
+# currently not deployed: HTTPDBLOGGER_VERSION="4.0.8-SNAPSHOT"
 # unzip options - quiet, do not list each extracted file
 UNZIP=-q; export UNZIP
 
