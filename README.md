@@ -6,7 +6,8 @@ To be used in a testing (non-production) environment. An external DB will be use
 
 **Documentaion** is available at https://axway.github.io/ats-testexplorer/Test-Explorer---Using-the-ATS-Test-Explorer-Docker-Image.html 
 
-**WORK still in progress**
+**Download** location and current versions could be checked at https://hub.docker.com/r/axway/ats-testexplorer/
+
 
 Environment variables expected for use with remote DB:
 - DB_TYPE - Database vendor. Supported values: PGSQL or MSSQL
@@ -19,7 +20,6 @@ Environment variables expected for use with remote DB:
 - DB_TE_USER - Username to be created/used for connection to the TestExplorer DB.
 - DB_TE_PASS - Password to be used for connection to the TestExplorer DB.
 
-**Download** location at https://hub.docker.com/r/axway/ats-testexplorer/
 
 Other **related projects**:
 <ul>

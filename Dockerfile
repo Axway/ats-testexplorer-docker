@@ -2,7 +2,7 @@ FROM ubuntu:18.04
 # Todo: Use direct Tomcat container
 LABEL maintainer="ats.team__@__axway.com"\
     product="Axway ATS TestExplorer with external DB"\
-version="4.0.8-SNAPSHOT"
+    version="4.0.8"
 
 ARG username=atsuser
 ARG password=atspassword
