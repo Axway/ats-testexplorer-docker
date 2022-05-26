@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
 
 . ./env.sh
-docker build -t $IMAGE_NAME $DOCKERFILE_LOCATION
+
+export TE_VERSION="4.0.11-log4j1-SNAPSHOT"
+# Download location for earlier versions. Switch to appropriate build path
+export TE_DOWNLOAD_LOCATION="https://oss.sonatype.org/content/groups/public/com/axway/ats/testexplorer/ats-testexplorer/$TE_VERSION"
+DOCKER_BUILDKIT=1 docker build --progress=plain \
+  --build-arg TE_VERSION \
+  --build-arg TE_DOWNLOAD_LOCATION \
+  -t $IMAGE_NAME $DOCKERFILE_LOCATION
