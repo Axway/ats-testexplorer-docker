@@ -4,26 +4,44 @@ ATS_USER_HOME=/home/atsuser
 mkdir -p $ATS_USER_HOME/work
 cd $ATS_USER_HOME/work
 
-TESTEXPLORER_VERSION="4.0.9-SNAPSHOT"
-# currently not deployed: HTTPDBLOGGER_VERSION="4.0.8-SNAPSHOT"
+
+# currently not deployed: HTTPDBLOGGER_VERSION="4.0.11-SNAPSHOT"
 # unzip options - quiet, do not list each extracted file
 UNZIP=-q; export UNZIP
 
-TOMCAT_DOWNLOAD_LOCATION="http://archive.apache.org/dist/tomcat/tomcat-8/v8.5.64/bin/apache-tomcat-8.5.64.zip"
+TOMCAT_VER=9.0.63
+TOMCAT_DOWNLOAD_LOCATION="http://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VER}/bin/apache-tomcat-${TOMCAT_VER}.zip"
 TOMCAT_ZIP_NAME=`echo $TOMCAT_DOWNLOAD_LOCATION | awk '{len=split($0,a,"/"); print a[len]}'`
 TOMCAT_NAME=`echo $TOMCAT_ZIP_NAME | awk '{len=split($0,a,".zip"); print a[len-1]}'`
 TOMCAT_HOME=$ATS_USER_HOME/work/tomcat
 
 TESTEXPLORER_HOME=$ATS_USER_HOME/work/testexplorer
-TESTEXPLORER_DOWNLOAD_LOCATION="https://oss.sonatype.org/content/groups/public/com/axway/ats/testexplorer/ats-testexplorer/$TESTEXPLORER_VERSION"
-TESTEXPLORER_METADATA=$TESTEXPLORER_VERSION
+#TE_DOWNLOAD_LOCATION="https://oss.sonatype.org/content/groups/public/com/axway/ats/testexplorer/ats-testexplorer/$TESTEXPLORER_VERSION"
+TESTEXPLORER_METADATA=$TE_VERSION
 
-wget -O testexplorer-maven-metadata.xml $TESTEXPLORER_DOWNLOAD_LOCATION/maven-metadata.xml
+echo "-- Starting TestExplorer-related downloads from $TE_DOWNLOAD_LOCATION"
+wget --no-check-certificate -O testexplorer-maven-metadata.xml $TE_DOWNLOAD_LOCATION/maven-metadata.xml
+WGET_STATUS=$?
+if [ $WGET_STATUS -eq 0 ]
+then
+  echo "Wget - successfully downloaded TestExplorer maven-metadata.xml."
+else
+  echo "Failed to download maven-metadata.xml for TestExplorer"
+  exit 3
+fi
+
 if [ -s "testexplorer-maven-metadata.xml" ];
 then
   TESTEXPLORER_METADATA=`cat testexplorer-maven-metadata.xml | grep 'value' | uniq | xargs | awk '{n=split($0,a,">"); print a[n-1]}' | awk '{n=split($0,a,"<"); print a[1]}'`
   rm testexplorer-maven-metadata.xml
   echo "Parsed latest snapshot version: $TESTEXPLORER_METADATA"
+  if [[ -z "$TESTEXPLORER_METADATA" ]]
+  then
+     echo "Could not parse version. Stop build"
+     exit 2
+  fi
+else
+    echo "Assume non-SNAPSHOT version: $TESTEXPLORER_METADATA because maven-metadata.xml is not found."
 fi
 
 ### HTTP Db Logger section - optional
@@ -65,32 +83,19 @@ cat <<EOF > $TOMCAT_HOME/webapps/ROOT/index.html
 </body>
 EOF
 
-
 # download TestExplorer
 if [ ! -d "$TESTEXPLORER_HOME" ];
 then
     mkdir -p $TESTEXPLORER_HOME
 fi
 cd $TESTEXPLORER_HOME
-wget "$TESTEXPLORER_DOWNLOAD_LOCATION/ats-testexplorer-$TESTEXPLORER_METADATA.zip"
+wget --no-check-certificate "$TE_DOWNLOAD_LOCATION/ats-testexplorer-$TESTEXPLORER_METADATA.zip"
 unzip ats-testexplorer-$TESTEXPLORER_METADATA.zip
 rm ats-testexplorer-$TESTEXPLORER_METADATA.zip
 # deploy TestExplorer - unpacked in webapps for easy runtime/on-start reconfiguration
 unzip *.war -d $TOMCAT_HOME/webapps/TestExplorer/
 
-# TestExplorer - old WAR re-pack version
-#mkdir tmp
-#cd tmp
-#cp ../ats-testexplorer-$TESTEXPLORER_VERSION.war .
-#unzip ats-testexplorer-$TESTEXPLORER_VERSION.war
-#sed -i 's/'db.port=1433'/'db.port=5432'/g' WEB-INF/classes/ats.config.properties
-#rm ats-testexplorer-$TESTEXPLORER_VERSION.war
-#zip -r ats-testexplorer-$TESTEXPLORER_VERSION.war ./*
-#mv ats-testexplorer-$TESTEXPLORER_VERSION.war ../
-#cd ../
-#rm -rf ./tmp
-# deploy testexplorer WAR
-#mv *.war $TOMCAT_HOME/webapps/TestExplorer.war
+# TestExplorer - once unpack and replace logging server and DB on each start
 
 cd $ATS_USER_HOME/work
 
