@@ -2,9 +2,9 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 # ATS TestExplorer image - for container deployments
 A container image with deployed ATS Test Explorer and ATS HTTP DB Logger. 
-To be used in a testing (non-production) environment. An external DB will be used.
+To be used in a testing (non-production) environment. An external DB should be configured for usage.
 
-**Documentaion** is available at https://axway.github.io/ats-testexplorer/Test-Explorer---Using-the-ATS-Test-Explorer-Docker-Image.html 
+**Documentation** is available at https://axway.github.io/ats-testexplorer/Test-Explorer---Using-the-ATS-Test-Explorer-Docker-Image.html 
 
 **Download** location and current versions could be checked at https://hub.docker.com/r/axway/ats-testexplorer/
 
