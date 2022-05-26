@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-# Trace version
+# Trace version: set -x
 # set -x
 
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 ATS_USER_HOME=/home/atsuser
-# TESTEXPLORER_VERSION="4.0.8"
+# TESTEXPLORER_VERSION="4.0.11"
 TESTEXPLORER_HOME=$ATS_USER_HOME/work/testexplorer
 TOMCAT_HOME=$ATS_USER_HOME/work/tomcat
 
@@ -240,16 +240,13 @@ fi
 # webapps/TestExplorer is unpacked/created during image creation
 cd "$TOMCAT_HOME/webapps/TestExplorer"
 
-if [[ -s WEB-INF/classes/databases.txt ]];
-then
-    echo "Non-empty databases.txt file. Reusing DB configuration"
-else
-    sed -i 's/'db.host=127.0.0.1'/'db.host=$DB_HOST'/g' WEB-INF/classes/ats.config.properties
-    sed -i 's/'db.port=1433'/'db.port=$DB_PORT'/g' WEB-INF/classes/ats.config.properties
-    sed -i 's/'db.user=AtsUser'/'db.user=$DB_TE_USER'/g' WEB-INF/classes/ats.config.properties
-    sed -i 's/'db.password=AtsPassword'/'db.password=$DB_TE_PASS'/g' WEB-INF/classes/ats.config.properties
-    echo "$DB_NAME\n" >> WEB-INF/classes/databases.txt
-fi
+# Always update connection properties even for "reuse" case because the target DB params could have been changed
+sed -i 's/'db.host=127.0.0.1'/'db.host=$DB_HOST'/g' WEB-INF/classes/ats.config.properties
+sed -i 's/'db.port=1433'/'db.port=$DB_PORT'/g' WEB-INF/classes/ats.config.properties
+sed -i 's/'db.user=AtsUser'/'db.user=$DB_TE_USER'/g' WEB-INF/classes/ats.config.properties
+sed -i 's/'db.password=AtsPassword1'/'db.password=$DB_TE_PASS'/g' WEB-INF/classes/ats.config.properties
+echo "$DB_NAME" >> WEB-INF/classes/databases.txt
+
 # Optionally repack war
 
 cd $TOMCAT_HOME
