@@ -4,7 +4,6 @@ ATS_USER_HOME=/home/atsuser
 mkdir -p $ATS_USER_HOME/work
 cd $ATS_USER_HOME/work
 
-
 # currently not deployed: HTTPDBLOGGER_VERSION="4.0.11-SNAPSHOT"
 # unzip options - quiet, do not list each extracted file
 UNZIP=-q; export UNZIP
@@ -95,7 +94,7 @@ rm ats-testexplorer-$TESTEXPLORER_METADATA.zip
 # deploy TestExplorer - unpacked in webapps for easy runtime/on-start reconfiguration
 unzip *.war -d $TOMCAT_HOME/webapps/TestExplorer/
 
-# TestExplorer - once unpack and replace logging server and DB on each start
+# TestExplorer - once unpack and replace DB logging properties on each container start
 
 cd $ATS_USER_HOME/work
 
@@ -111,4 +110,4 @@ cd $ATS_USER_HOME/work
 #mv *.war $TOMCAT_HOME/webapps/HttpDbLogger.war
 
 # do not ask for password, when user 'atsuser' executes sudo
-echo "atsuser ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/dont-prompt-atsuser-for-password
+# echo "atsuser ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/dont-prompt-atsuser-for-password

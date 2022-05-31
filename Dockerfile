@@ -63,7 +63,6 @@ RUN $workdir/config
 
 RUN chown -R $username /home/$username
 
-
 USER $username
 
 # EXPOSE 8080
@@ -71,5 +70,4 @@ USER $username
 ENV ENTRYPOINT_SCRIPT=$workdir/entrypoint
 
 CMD ["bash","-c","$ENTRYPOINT_SCRIPT"]
-
 
